@@ -78,13 +78,7 @@ private:
         for (int interval : intervals)
             intervalSet[interval] = true;
 
-        // Major chord: root, major 3rd (4 semitones), perfect 5th (7 semitones)
-        if (intervalSet[4] && intervalSet[7])
-            return { "Major", 0.95f };
-
-        // Minor chord: root, minor 3rd (3 semitones), perfect 5th (7 semitones)
-        if (intervalSet[3] && intervalSet[7])
-            return { "Minor", 0.95f };
+        // Check 4-note chords first (more specific) before falling back to triads
 
         // Dominant 7th: root, major 3rd, perfect 5th, minor 7th (10 semitones)
         if (intervalSet[4] && intervalSet[7] && intervalSet[10])
@@ -97,6 +91,14 @@ private:
         // Minor 7th: root, minor 3rd, perfect 5th, minor 7th (10 semitones)
         if (intervalSet[3] && intervalSet[7] && intervalSet[10])
             return { "Minor 7th", 0.90f };
+
+        // Major chord: root, major 3rd (4 semitones), perfect 5th (7 semitones)
+        if (intervalSet[4] && intervalSet[7])
+            return { "Major", 0.95f };
+
+        // Minor chord: root, minor 3rd (3 semitones), perfect 5th (7 semitones)
+        if (intervalSet[3] && intervalSet[7])
+            return { "Minor", 0.95f };
 
         // Augmented: root, major 3rd, augmented 5th (8 semitones)
         if (intervalSet[4] && intervalSet[8])

@@ -78,6 +78,13 @@ void PluginProcessor::setPeakThreshold (float threshold)
     noteDetector.setPeakThreshold (threshold);
 }
 
+void PluginProcessor::getFFTData (float* dest, int maxSize) const
+{
+    juce::SpinLock::ScopedLockType lock (notesLock);
+    int numToCopy = std::min (maxSize, FFT_SIZE / 2);
+    std::copy (fftData.begin(), fftData.begin() + numToCopy, dest);
+}
+
 void PluginProcessor::pushSampleIntoFifo (float sample) noexcept
 {
     if (fifoIndex == FFT_SIZE)

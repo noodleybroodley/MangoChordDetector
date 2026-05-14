@@ -62,5 +62,8 @@ private:
     float peakThreshold = 0.02f;
     double sampleRate = 44100.0;
 
+    void pushSampleIntoFifo (float sample) noexcept;
+    void performFFTAnalysis();
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };

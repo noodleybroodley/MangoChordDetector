@@ -55,6 +55,11 @@ void PluginEditor::resized()
 
 void PluginEditor::timerCallback()
 {
+    // Update spectrogram with latest FFT data
+    float fftSnapshot[512] = {};
+    processor.getFFTData (fftSnapshot, 512);
+    spectrogram.setFFTData (fftSnapshot, 512);
+
     // Update musical display with current detected notes
     auto detectedNotes = processor.getDetectedNotes();
     musicalDisplay.setDetectedNotes (detectedNotes);

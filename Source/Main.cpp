@@ -9,8 +9,4 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-// Plugin metadata
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return new PluginProcessor();
-}
+// Plugin entry point is defined in PluginProcessor.cpp
