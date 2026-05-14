@@ -73,16 +73,85 @@ public:
         std::sort(peaks.begin(), peaks.end(),
                   [](const PeakInfo& a, const PeakInfo& b) { return a.magnitude > b.magnitude; });
 
-        int numPeaks = std::min((int)peaks.size(), maxNotesToDetect);
+        // Suppress harmonic peaks (overtones of stronger lower peaks).
+        // A peak at ~N * f0 (N = 2..8) of a stronger peak is treated as an overtone.
+        std::vector<PeakInfo> fundamentals;
+        fundamentals.reserve(peaks.size());
+        const double centsTolerance = 35.0; // ~1/3 semitone
+        for (const auto& p : peaks)
+        {
+            bool isHarmonic = false;
+            for (const auto& f : fundamentals)
+            {
+                if (f.frequency <= 0.0)
+                    continue;
+
+                double ratio = p.frequency / f.frequency;
+                if (ratio < 1.5)
+                    continue; // not a higher harmonic of f
+
+                int nearestHarmonic = (int) std::round(ratio);
+                if (nearestHarmonic < 2 || nearestHarmonic > 8)
+                    continue;
+
+                double expected = f.frequency * nearestHarmonic;
+                double cents = 1200.0 * std::log2(p.frequency / expected);
+                if (std::abs(cents) <= centsTolerance && p.magnitude <= f.magnitude)
+                {
+                    isHarmonic = true;
+                    break;
+                }
+            }
+            if (! isHarmonic)
+                fundamentals.push_back(p);
+        }
+
+        // Also collapse duplicate detections that map to the same MIDI pitch class+octave:
+        // keep only the strongest occurrence per MIDI note.
+        std::vector<PeakInfo> uniqueByMidi;
+        uniqueByMidi.reserve(fundamentals.size());
+        for (const auto& p : fundamentals)
+        {
+            int midi = frequencyToMidiNote(p.frequency);
+            bool replaced = false;
+            for (auto& existing : uniqueByMidi)
+            {
+                if (frequencyToMidiNote(existing.frequency) == midi)
+                {
+                    if (p.magnitude > existing.magnitude)
+                        existing = p;
+                    replaced = true;
+                    break;
+                }
+            }
+            if (! replaced)
+                uniqueByMidi.push_back(p);
+        }
+
+        // Keep only peaks that are reasonably strong relative to the strongest fundamental.
+        // This focuses on the most representative notes and rejects weak residuals.
+        if (! uniqueByMidi.empty())
+        {
+            float strongest = uniqueByMidi.front().magnitude;
+            const float relativeKeepRatio = 0.35f; // keep peaks within ~9 dB of the strongest
+            uniqueByMidi.erase(
+                std::remove_if(uniqueByMidi.begin(), uniqueByMidi.end(),
+                               [strongest, relativeKeepRatio](const PeakInfo& p) {
+                                   return p.magnitude < strongest * relativeKeepRatio;
+                               }),
+                uniqueByMidi.end());
+        }
+
+        int numPeaks = std::min((int)uniqueByMidi.size(), maxNotesToDetect);
         for (int i = 0; i < numPeaks; ++i)
         {
-            int midiNote = frequencyToMidiNote(peaks[i].frequency);
+            int midiNote = frequencyToMidiNote(uniqueByMidi[i].frequency);
             juce::String noteName = midiNoteToName(midiNote);
 
             detectedNotes.push_back({
                 midiNote,
-                peaks[i].normalizedMagnitude,
-                peaks[i].frequency,
+                uniqueByMidi[i].normalizedMagnitude,
+                uniqueByMidi[i].frequency,
                 noteName
             });
         }
