@@ -102,7 +102,7 @@ public:
 
     void paint (juce::Graphics& g) override
     {
-        g.fillAll (juce::Colours::darkGrey);
+        g.fillAll (juce::Colours::darkgrey);
         g.setColour (juce::Colours::white);
 
         if (detectedNotes.empty())
@@ -126,13 +126,13 @@ public:
             g.drawText (note.noteName, 10, yPos, 80, 20, juce::Justification::left);
 
             // Draw frequency
-            g.setColour (juce::Colours::lightGrey);
+            g.setColour (juce::Colours::lightgrey);
             g.setFont (11.0f);
             juce::String freqStr = juce::String (note.frequency, 1) + " Hz";
             g.drawText (freqStr, 10, yPos + 18, 80, 14, juce::Justification::left);
 
             // Draw confidence bar
-            g.setColour (juce::Colours::darkGrey.brighter());
+            g.setColour (juce::Colours::darkgrey.brighter());
             float barWidth = 80.0f * note.confidence;
             g.fillRect (100.0f, (float)yPos + 4, barWidth, 12.0f);
             g.setColour (juce::Colours::white);

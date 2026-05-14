@@ -26,18 +26,31 @@ void PluginProcessor::releaseResources()
 void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+    const int numSamples = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels();
 
-    // Process input channel 0
-    if (buffer.getNumChannels() > 0)
+    if (numChannels > 0 && numSamples > 0)
     {
-        auto* channelData = buffer.getReadPointer (0);
-        for (int i = 0; i < buffer.getNumSamples(); ++i)
-            pushSampleIntoFifo (channelData[i]);
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float mono = 0.0f;
+            for (int ch = 0; ch < numChannels; ++ch)
+                mono += buffer.getReadPointer (ch)[i];
+            mono /= (float)numChannels;
+            pushSampleIntoFifo (mono);
+        }
     }
+}
 
-    // Copy input to output (pass-through)
-    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        buffer.clear (ch, 0, buffer.getNumSamples());
+bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const {
+    const auto& mainOut = layouts.getMainOutputChannelSet();
+    const auto& mainIn = layouts.getMainInputChannelSet();
+
+    if (mainOut != juce::AudioChannelSet::mono() && mainOut != juce::AudioChannelSet::stereo())
+        return false;
+    if (mainIn != mainOut && ! mainIn.isDisabled())
+        return false;
+    return true;
 }
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()

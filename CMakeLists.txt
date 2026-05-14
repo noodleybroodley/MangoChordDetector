@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(MangoChordDetector)
+project(MangoChordDetector VERSION 0.1.0)
 
 set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "Build architecture" FORCE)
 set(CMAKE_CXX_STANDARD 20)
@@ -21,6 +21,9 @@ juce_add_plugin(MangoChordDetector
     PLUGIN_CODE "MnGo"
     VST3_CATEGORIES "Analyzer"
     FORMATS VST3)
+
+target_compile_definitions(MangoChordDetector 
+    PRIVATE JUCE_VST3_CAN_REPLACE_VST2=0)
 
 target_sources(MangoChordDetector PRIVATE
     Source/Main.cpp
