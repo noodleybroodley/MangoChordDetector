@@ -60,20 +60,38 @@ void PluginEditor::timerCallback()
     processor.getFFTData (fftSnapshot, 512);
     spectrogram.setFFTData (fftSnapshot, 512);
 
-    // Update musical display with current detected notes
+    // Filter detected notes to only those with >= 70% confidence
     auto detectedNotes = processor.getDetectedNotes();
-    musicalDisplay.setDetectedNotes (detectedNotes);
+    std::vector<DetectedNote> highConfidenceNotes;
+    highConfidenceNotes.reserve (detectedNotes.size());
+    for (const auto& n : detectedNotes)
+        if (n.confidence >= kConfidenceThreshold)
+            highConfidenceNotes.push_back (n);
 
-    // Update chord display
     auto detectedChord = processor.getDetectedChord();
-    if (!detectedNotes.empty())
+    bool chordHighConfidence = detectedChord.confidence >= kConfidenceThreshold
+                               && ! highConfidenceNotes.empty();
+
+    // If we have a confident new detection, update what we show.
+    // Otherwise keep displaying the last confident detection (handles silence).
+    if (! highConfidenceNotes.empty())
     {
-        chordDisplayLabel.setText (detectedChord.fullName + " ("
-            + juce::String (static_cast<int>(detectedChord.confidence * 100)) + "%)",
+        lastShownNotes = highConfidenceNotes;
+        if (chordHighConfidence)
+            lastShownChord = detectedChord;
+        hasShownAnything = true;
+    }
+
+    if (hasShownAnything)
+    {
+        musicalDisplay.setDetectedNotes (lastShownNotes);
+        chordDisplayLabel.setText (lastShownChord.fullName + " ("
+            + juce::String (static_cast<int>(lastShownChord.confidence * 100)) + "%)",
             juce::dontSendNotification);
     }
     else
     {
+        musicalDisplay.setDetectedNotes ({});
         chordDisplayLabel.setText ("Detecting...", juce::dontSendNotification);
     }
 }

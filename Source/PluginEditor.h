@@ -75,5 +75,12 @@ private:
     juce::Label thresholdLabel;
     juce::Label chordDisplayLabel;
 
+    // Hold the last high-confidence detection so it stays on screen during silence
+    std::vector<DetectedNote> lastShownNotes;
+    DetectedChord lastShownChord;
+    bool hasShownAnything = false;
+
+    static constexpr float kConfidenceThreshold = 0.70f;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
