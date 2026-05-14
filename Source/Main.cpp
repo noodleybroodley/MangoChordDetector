@@ -1,97 +1,16 @@
 /*
   ==============================================================================
 
-    This file contains the startup code for a PIP.
+    VST3 Plugin for real-time note and chord detection using FFT analysis.
 
   ==============================================================================
 */
 
 #include <JuceHeader.h>
-#include "SimpleFFTTutorial_01.h"
-#include "cmp_plot.h"
+#include "PluginProcessor.h"
 
-class Application    : public juce::JUCEApplication
+// Plugin metadata
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-public:
-    //==============================================================================
-    Application() = default;
-
-    const juce::String getApplicationName() override       { return "MangoChordDetector"; }
-    const juce::String getApplicationVersion() override    { return "1.0.0"; }
-
-    void initialise (const juce::String&) override
-    {
-        mainWindow.reset (new MainWindow ("SimpleFFTTutorial", std::make_unique<SpectrogramComponent>(), *this));
-    }
-
-    void shutdown() override                         { mainWindow = nullptr; }
-
-private:
-    class MainWindow    : public juce::DocumentWindow
-    {
-    public:
-        MainWindow (const juce::String& name, std::unique_ptr<juce::Component> c, JUCEApplication& a)
-            : DocumentWindow (name, juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                                                .findColour (ResizableWindow::backgroundColourId),
-                              juce::DocumentWindow::allButtons),
-              app (a)
-        {
-            setUsingNativeTitleBar (true);
-
-           #if JUCE_ANDROID || JUCE_IOS
-            setContentOwned (new SafeAreaComponent { std::move (c) }, true);
-            setFullScreen (true);
-           #else
-            setContentOwned (c.release(), true);
-            setResizable (true, false);
-            setResizeLimits (300, 250, 10000, 10000);
-            centreWithSize (getWidth(), getHeight());
-           #endif
-
-            setVisible (true);
-        }
-
-        void closeButtonPressed() override
-        {
-            app.systemRequestedQuit();
-        }
-
-       #if JUCE_ANDROID || JUCE_IOS
-        class SafeAreaComponent : public juce::Component
-        {
-        public:
-            explicit SafeAreaComponent (std::unique_ptr<Component> c)
-                : content (std::move (c))
-            {
-                addAndMakeVisible (*content);
-            }
-
-            void resized() override
-            {
-                if (const auto* d = Desktop::getInstance().getDisplays().getDisplayForRect (getLocalBounds()))
-                    content->setBounds (d->safeAreaInsets.subtractedFrom (getLocalBounds()));
-            }
-
-        private:
-            std::unique_ptr<Component> content;
-        };
-
-        void parentSizeChanged() override
-        {
-            if (auto* c = getContentComponent())
-                c->resized();
-        }
-       #endif
-
-    private:
-        JUCEApplication& app;
-
-        //==============================================================================
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
-    };
-
-    std::unique_ptr<MainWindow> mainWindow;
-};
-
-//==============================================================================
-START_JUCE_APPLICATION (Application)
+    return new PluginProcessor();
+}
